@@ -12,13 +12,13 @@ testable state of the project.
 ## Run locally
 
 ```sh
-go run .
+go run ./cmd/api
 ```
 
 The server listens on port `8085` by default. Use `PORT` to select another port:
 
 ```sh
-PORT=8080 go run .
+PORT=8080 go run ./cmd/api
 ```
 
 Verify that the server is running:
@@ -33,7 +33,7 @@ The application uses the ngrok Go SDK already included in the project. Set the
 auth token and start the application:
 
 ```sh
-NGROK_AUTHTOKEN=<token> go run .
+NGROK_AUTHTOKEN=<token> go run ./cmd/api
 ```
 
 The public URL is printed in the application logs. The token must be supplied
@@ -73,6 +73,6 @@ Durability is intentionally not implemented because it is explicitly outside the
 assignment scope. Application state will exist only during the process lifetime
 and will be cleared through `POST /reset` once the account operations are added.
 
-Phase 0 provides the executable HTTP bootstrap, configurable port, optional
-ngrok forwarding and a health check. Account operations are intentionally left
-for the following implementation phases.
+Phase 1 separates the executable bootstrap, HTTP transport and ngrok
+infrastructure. The health check remains the only HTTP operation. Account
+operations are intentionally left for the following implementation phases.

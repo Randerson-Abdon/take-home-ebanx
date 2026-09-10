@@ -1,4 +1,4 @@
-package main
+package httpapi
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ func TestHealth(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/health", nil)
 	recorder := httptest.NewRecorder()
 
-	newHandler().ServeHTTP(recorder, request)
+	NewHandler().ServeHTTP(recorder, request)
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, recorder.Code)
