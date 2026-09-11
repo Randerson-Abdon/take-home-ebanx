@@ -63,9 +63,10 @@ the rules to HTTP. A full Clean or Hexagonal Architecture was also rejected
 because its additional ports, adapters and mappings would not provide
 proportional value here.
 
-Interfaces will not be introduced until there is more than one implementation or
-a concrete testability need. This keeps the code malleable without anticipating
-requirements that are outside the specification.
+The account service owns a small `Store` interface containing only the operations
+required by its business rules. This keeps the domain independent from the
+in-memory implementation without introducing repository abstractions or mapping
+layers that are unnecessary for the challenge.
 
 ## Scope and current status
 
@@ -77,7 +78,7 @@ Account IDs are strings, matching the API contract. Balances are represented by
 `int64`, which avoids floating-point rounding and is sufficient for the integer
 amounts defined by the assignment.
 
-Phase 2 introduces the account model and a concurrency-safe in-memory store. The
-store supports lookup, creation, replacement and reset without containing HTTP
-or business-rule concerns. Account operations are intentionally left for the
-following implementation phases.
+Phase 3 introduces the account service and the deposit rule. Deposits reject
+non-positive amounts, create missing destination accounts and persist increments
+to existing accounts. The service serializes business mutations so concurrent
+deposits cannot overwrite one another between the store lookup and save steps.
