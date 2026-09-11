@@ -47,6 +47,12 @@ go test ./...
 go vet ./...
 ```
 
+Run the official API workflow test independently with:
+
+```sh
+go test ./internal/httpapi -run TestOfficialAPIWorkflow -v
+```
+
 ## Architecture
 
 The API will use a simple layered architecture:
@@ -78,9 +84,7 @@ Account IDs are strings, matching the API contract. Balances are represented by
 `int64`, which avoids floating-point rounding and is sufficient for the integer
 amounts defined by the assignment.
 
-Phase 7 exposes the account service through the required `POST /reset`,
-`GET /balance` and `POST /event` routes. HTTP handlers translate requests and
-domain errors without containing balance rules. The bootstrap creates one store
-and one service instance so all requests share the same in-memory state. A small
-CORS middleware allows the EBANX browser-based test suite to call the public
-ngrok URL.
+Phase 8 adds an integration test that reproduces the complete official EBANX API
+workflow against the real HTTP handler, account service and in-memory store. The
+test validates each response in order and confirms that the final failed
+transfer preserves both account balances.
