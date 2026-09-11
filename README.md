@@ -78,7 +78,8 @@ Account IDs are strings, matching the API contract. Balances are represented by
 `int64`, which avoids floating-point rounding and is sufficient for the integer
 amounts defined by the assignment.
 
-Phase 5 adds withdrawals to the account service. A withdrawal requires an
-existing account, a positive amount and sufficient funds. Every validation is
-completed before the account is saved, so rejected withdrawals leave state
-unchanged. Concurrent withdrawals are serialized to prevent overdrafts.
+Phase 6 adds transfers to the account service. All validation is completed before
+state changes, and the store saves origin and destination together under one
+lock. Failed transfers leave both accounts unchanged, while concurrent transfers
+cannot overdraw the origin. A transfer to the same account is treated as a
+successful no-op so it cannot create or destroy funds.

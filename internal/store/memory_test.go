@@ -49,6 +49,26 @@ func TestMemoryStoreUpdatesExistingAccount(t *testing.T) {
 	}
 }
 
+func TestMemoryStoreSavesMultipleAccounts(t *testing.T) {
+	store := NewMemoryStore()
+	accounts := []account.Account{
+		{ID: "100", Balance: 5},
+		{ID: "200", Balance: 15},
+	}
+
+	store.SaveAll(accounts...)
+
+	for _, want := range accounts {
+		got, found := store.Find(want.ID)
+		if !found {
+			t.Fatalf("expected account %q to be found", want.ID)
+		}
+		if got != want {
+			t.Fatalf("expected account %+v, got %+v", want, got)
+		}
+	}
+}
+
 func TestMemoryStoreReturnsAccountByValue(t *testing.T) {
 	store := NewMemoryStore()
 	store.Save(account.Account{ID: "100", Balance: 10})

@@ -31,10 +31,17 @@ func (s *MemoryStore) Find(id string) (account.Account, bool) {
 
 // Save creates or replaces an account.
 func (s *MemoryStore) Save(accountToSave account.Account) {
+	s.SaveAll(accountToSave)
+}
+
+// SaveAll creates or replaces accounts as a single atomic store operation.
+func (s *MemoryStore) SaveAll(accounts ...account.Account) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.accounts[accountToSave.ID] = accountToSave
+	for _, accountToSave := range accounts {
+		s.accounts[accountToSave.ID] = accountToSave
+	}
 }
 
 // Reset removes all accounts from the store.
