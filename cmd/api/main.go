@@ -41,10 +41,11 @@ func main() {
 			serveErrors <- http.Serve(listener, handler)
 		}()
 		log.Printf("server listening on http://localhost:%s", port)
+		log.Printf("ngrok token loaded; starting tunnel")
 
 		forwarder, err := tunnel.Start(context.Background(), port)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("start ngrok tunnel: %v", err)
 		}
 		defer func() {
 			if err := forwarder.Close(); err != nil {
@@ -59,6 +60,7 @@ func main() {
 		return
 	}
 
+	log.Printf("NGROK_AUTHTOKEN is not configured; ngrok tunnel disabled")
 	log.Printf("server listening on http://localhost:%s", port)
 	if err := http.Serve(listener, handler); err != nil {
 		log.Fatal(err)

@@ -53,6 +53,8 @@ go run ./cmd/api
 
 The local HTTP server starts before the ngrok connection is established, and the
 public URL is printed in the application logs as soon as the tunnel is ready.
+Startup logs also show the agent connection, authentication, endpoint creation
+and heartbeat events without exposing the authentication token.
 The `.env` file is ignored by Git and must not be committed. Variables already
 exported by the operating system take precedence over values from the file.
 
