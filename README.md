@@ -27,17 +27,36 @@ Verify that the server is running:
 curl -i http://localhost:8085/health
 ```
 
+The root path (`/`) is not part of the assignment API and intentionally returns
+`404 Not Found`. Use `/health` for the local availability check.
+
 ## Run with ngrok
 
-The application uses the ngrok Go SDK already included in the project. Set the
-auth token and start the application:
+The application uses the ngrok Go SDK already included in the project. Create
+your local environment file from the committed example:
 
 ```sh
-NGROK_AUTHTOKEN=<token> go run ./cmd/api
+cp .env.example .env
 ```
 
-The public URL is printed in the application logs. The token must be supplied
-through the environment and must not be committed to the repository.
+Set your token in `.env`:
+
+```dotenv
+NGROK_AUTHTOKEN=<token>
+```
+
+Then start the application:
+
+```sh
+go run ./cmd/api
+```
+
+The local HTTP server starts before the ngrok connection is established, and the
+public URL is printed in the application logs as soon as the tunnel is ready.
+Startup logs also show the agent connection, authentication, endpoint creation
+and heartbeat events without exposing the authentication token.
+The `.env` file is ignored by Git and must not be committed. Variables already
+exported by the operating system take precedence over values from the file.
 
 ## Verification
 
