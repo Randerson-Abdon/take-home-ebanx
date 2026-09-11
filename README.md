@@ -78,8 +78,9 @@ Account IDs are strings, matching the API contract. Balances are represented by
 `int64`, which avoids floating-point rounding and is sufficient for the integer
 amounts defined by the assignment.
 
-Phase 6 adds transfers to the account service. All validation is completed before
-state changes, and the store saves origin and destination together under one
-lock. Failed transfers leave both accounts unchanged, while concurrent transfers
-cannot overdraw the origin. A transfer to the same account is treated as a
-successful no-op so it cannot create or destroy funds.
+Phase 7 exposes the account service through the required `POST /reset`,
+`GET /balance` and `POST /event` routes. HTTP handlers translate requests and
+domain errors without containing balance rules. The bootstrap creates one store
+and one service instance so all requests share the same in-memory state. A small
+CORS middleware allows the EBANX browser-based test suite to call the public
+ngrok URL.

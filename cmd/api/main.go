@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Randerson-Abdon/take-home-ebanx/internal/account"
 	"github.com/Randerson-Abdon/take-home-ebanx/internal/httpapi"
+	"github.com/Randerson-Abdon/take-home-ebanx/internal/store"
 	"github.com/Randerson-Abdon/take-home-ebanx/internal/tunnel"
 )
 
@@ -38,7 +40,10 @@ func main() {
 		log.Printf("public URL: %s", forwarder.URL())
 	}
 
-	if err := http.Serve(listener, httpapi.NewHandler()); err != nil {
+	memoryStore := store.NewMemoryStore()
+	accountService := account.NewService(memoryStore)
+
+	if err := http.Serve(listener, httpapi.NewHandler(accountService)); err != nil {
 		log.Fatal(err)
 	}
 }
