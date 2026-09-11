@@ -6,17 +6,31 @@ import "sync"
 type Store interface {
 	Find(id string) (Account, bool)
 	Save(account Account)
+	Reset()
 }
 
 // Service applies account business rules.
 type Service struct {
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	store Store
 }
 
 // NewService creates an account service backed by the provided store.
 func NewService(store Store) *Service {
 	return &Service{store: store}
+}
+
+// Balance returns the current balance without changing account state.
+func (s *Service) Balance(id string) (int64, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	storedAccount, found := s.store.Find(id)
+	if !found {
+		return 0, ErrAccountNotFound
+	}
+
+	return storedAccount.Balance, nil
 }
 
 // Deposit creates or credits the destination account.
@@ -37,4 +51,12 @@ func (s *Service) Deposit(destination string, amount int64) (Account, error) {
 	s.store.Save(destinationAccount)
 
 	return destinationAccount, nil
+}
+
+// Reset removes all account state.
+func (s *Service) Reset() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.store.Reset()
 }

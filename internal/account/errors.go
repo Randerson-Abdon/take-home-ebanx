@@ -2,5 +2,10 @@ package account
 
 import "errors"
 
-// ErrInvalidAmount indicates that an operation received a non-positive amount.
-var ErrInvalidAmount = errors.New("amount must be greater than zero")
+var (
+	// ErrAccountNotFound indicates that an account does not exist.
+	ErrAccountNotFound = errors.New("account not found")
+
+	// ErrInvalidAmount indicates that an operation received a non-positive amount.
+	ErrInvalidAmount = errors.New("amount must be greater than zero")
+)

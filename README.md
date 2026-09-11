@@ -78,7 +78,7 @@ Account IDs are strings, matching the API contract. Balances are represented by
 `int64`, which avoids floating-point rounding and is sufficient for the integer
 amounts defined by the assignment.
 
-Phase 3 introduces the account service and the deposit rule. Deposits reject
-non-positive amounts, create missing destination accounts and persist increments
-to existing accounts. The service serializes business mutations so concurrent
-deposits cannot overwrite one another between the store lookup and save steps.
+Phase 4 adds balance lookup and state reset to the account service. Balance
+queries return an explicit not-found domain error and never create or update an
+account. Reset is serialized with other business mutations and removes every
+stored account before new operations are accepted.

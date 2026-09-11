@@ -9,6 +9,88 @@ import (
 	"github.com/Randerson-Abdon/take-home-ebanx/internal/store"
 )
 
+func TestBalanceReturnsExistingAccountBalance(t *testing.T) {
+	memoryStore := store.NewMemoryStore()
+	memoryStore.Save(account.Account{ID: "100", Balance: 20})
+	service := account.NewService(memoryStore)
+
+	got, err := service.Balance("100")
+
+	if err != nil {
+		t.Fatalf("balance returned an unexpected error: %v", err)
+	}
+	if got != 20 {
+		t.Fatalf("expected balance 20, got %d", got)
+	}
+}
+
+func TestBalanceReturnsErrorForMissingAccount(t *testing.T) {
+	memoryStore := store.NewMemoryStore()
+	service := account.NewService(memoryStore)
+
+	got, err := service.Balance("missing")
+
+	if !errors.Is(err, account.ErrAccountNotFound) {
+		t.Fatalf("expected ErrAccountNotFound, got %v", err)
+	}
+	if got != 0 {
+		t.Fatalf("expected zero balance, got %d", got)
+	}
+	if _, found := memoryStore.Find("missing"); found {
+		t.Fatal("expected balance lookup not to create an account")
+	}
+}
+
+func TestBalanceDoesNotChangeAccountState(t *testing.T) {
+	memoryStore := store.NewMemoryStore()
+	want := account.Account{ID: "100", Balance: 20}
+	memoryStore.Save(want)
+	service := account.NewService(memoryStore)
+
+	for range 3 {
+		if _, err := service.Balance("100"); err != nil {
+			t.Fatalf("balance returned an unexpected error: %v", err)
+		}
+	}
+
+	assertStoredAccount(t, memoryStore, want)
+}
+
+func TestResetRemovesAllAccounts(t *testing.T) {
+	memoryStore := store.NewMemoryStore()
+	memoryStore.Save(account.Account{ID: "100", Balance: 10})
+	memoryStore.Save(account.Account{ID: "200", Balance: 20})
+	service := account.NewService(memoryStore)
+
+	service.Reset()
+
+	for _, id := range []string{"100", "200"} {
+		if _, err := service.Balance(id); !errors.Is(err, account.ErrAccountNotFound) {
+			t.Fatalf("expected account %q to be removed, got %v", id, err)
+		}
+	}
+}
+
+func TestResetAllowsNewStateAfterClearingAccounts(t *testing.T) {
+	memoryStore := store.NewMemoryStore()
+	service := account.NewService(memoryStore)
+
+	if _, err := service.Deposit("100", 10); err != nil {
+		t.Fatalf("deposit returned an unexpected error: %v", err)
+	}
+	service.Reset()
+	want := account.Account{ID: "100", Balance: 5}
+	got, err := service.Deposit("100", 5)
+
+	if err != nil {
+		t.Fatalf("deposit after reset returned an unexpected error: %v", err)
+	}
+	if got != want {
+		t.Fatalf("expected account %+v, got %+v", want, got)
+	}
+	assertStoredAccount(t, memoryStore, want)
+}
+
 func TestDepositCreatesDestinationAccount(t *testing.T) {
 	memoryStore := store.NewMemoryStore()
 	service := account.NewService(memoryStore)
