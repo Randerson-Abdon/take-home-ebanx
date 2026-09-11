@@ -29,15 +29,28 @@ curl -i http://localhost:8085/health
 
 ## Run with ngrok
 
-The application uses the ngrok Go SDK already included in the project. Set the
-auth token and start the application:
+The application uses the ngrok Go SDK already included in the project. Create
+your local environment file from the committed example:
 
 ```sh
-NGROK_AUTHTOKEN=<token> go run ./cmd/api
+cp .env.example .env
 ```
 
-The public URL is printed in the application logs. The token must be supplied
-through the environment and must not be committed to the repository.
+Set your token in `.env`:
+
+```dotenv
+NGROK_AUTHTOKEN=<token>
+```
+
+Then start the application:
+
+```sh
+go run ./cmd/api
+```
+
+The public URL is printed in the application logs. The `.env` file is ignored by
+Git and must not be committed. Variables already exported by the operating
+system take precedence over values from the file.
 
 ## Verification
 

@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/Randerson-Abdon/take-home-ebanx/internal/account"
+	"github.com/Randerson-Abdon/take-home-ebanx/internal/config"
 	"github.com/Randerson-Abdon/take-home-ebanx/internal/httpapi"
 	"github.com/Randerson-Abdon/take-home-ebanx/internal/store"
 	"github.com/Randerson-Abdon/take-home-ebanx/internal/tunnel"
@@ -16,6 +17,10 @@ import (
 const defaultPort = "8085"
 
 func main() {
+	if err := config.LoadEnv(".env"); err != nil {
+		log.Fatal(err)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
