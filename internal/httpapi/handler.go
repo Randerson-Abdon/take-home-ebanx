@@ -76,7 +76,9 @@ func health(w http.ResponseWriter, _ *http.Request) {
 
 func (h *handler) reset(w http.ResponseWriter, _ *http.Request) {
 	h.service.Reset()
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
+	_, _ = fmt.Fprint(w, "OK")
 }
 
 func (h *handler) balance(w http.ResponseWriter, request *http.Request) {

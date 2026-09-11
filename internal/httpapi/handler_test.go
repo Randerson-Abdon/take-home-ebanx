@@ -47,7 +47,7 @@ func TestResetClearsAccountState(t *testing.T) {
 	resetResponse := performRequest(handler, http.MethodPost, "/reset", "")
 	balanceResponse := performRequest(handler, http.MethodGet, "/balance?account_id=100", "")
 
-	assertResponse(t, resetResponse, http.StatusOK, "")
+	assertResponse(t, resetResponse, http.StatusOK, "OK")
 	assertResponse(t, balanceResponse, http.StatusNotFound, "0")
 }
 

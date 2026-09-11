@@ -20,6 +20,7 @@ func TestOfficialAPIWorkflow(t *testing.T) {
 			method:     http.MethodPost,
 			target:     "/reset",
 			wantStatus: http.StatusOK,
+			wantBody:   "OK",
 		},
 		{
 			name:       "get balance for non-existing account",
