@@ -1,8 +1,8 @@
 # EBANX Software Engineer Take-home Assignment
 
-A small Go HTTP API for the EBANX take-home assignment. The implementation is
-being developed incrementally so that every main commit represents a valid,
-testable state of the project.
+A small Go HTTP API for the EBANX take-home assignment. It implements account
+deposits, withdrawals, transfers and balance queries using concurrency-safe
+in-memory state.
 
 ## Requirements
 
@@ -53,8 +53,8 @@ go run ./cmd/api
 
 The local HTTP server starts before the ngrok connection is established, and the
 public URL is printed in the application logs as soon as the tunnel is ready.
-Startup logs also show the agent connection, authentication, endpoint creation
-and heartbeat events without exposing the authentication token.
+Startup logs also show the agent connection, authentication and endpoint
+creation without exposing the authentication token.
 The `.env` file is ignored by Git and must not be committed. Variables already
 exported by the operating system take precedence over values from the file.
 
@@ -63,8 +63,30 @@ exported by the operating system take precedence over values from the file.
 ```sh
 gofmt -w .
 go test ./...
+go test -race ./...
 go vet ./...
 ```
+
+## API contract
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/reset` | Clear all in-memory account state |
+| `GET` | `/balance?account_id={id}` | Return an account balance |
+| `POST` | `/event` | Process a deposit, withdrawal or transfer |
+| `GET` | `/health` | Check local application availability |
+
+Event examples:
+
+```json
+{"type":"deposit","destination":"100","amount":10}
+{"type":"withdraw","origin":"100","amount":5}
+{"type":"transfer","origin":"100","destination":"300","amount":15}
+```
+
+The assignment responses are preserved exactly: successful events return
+`201`, missing accounts return `404 0`, balances return their numeric value and
+reset returns `200 OK` with `OK` in the response body.
 
 ## Postman
 
@@ -93,12 +115,12 @@ go test ./internal/httpapi -run TestOfficialAPIWorkflow -v
 
 ## Architecture
 
-The API will use a simple layered architecture:
+The API uses a simple layered architecture:
 
-- The HTTP transport will handle routing, request parsing and HTTP responses.
-- The account service will contain the business rules.
-- The in-memory store will own the application state and its synchronization.
-- The application bootstrap will create and connect these components.
+- The HTTP transport handles routing, request parsing and HTTP responses.
+- The account service contains the business rules and coordinates operations.
+- The in-memory store owns the application state and its synchronization.
+- The application bootstrap creates and connects these components.
 
 This structure keeps business rules independent from HTTP and makes them easy to
 test, while avoiding abstractions that are unnecessary for the size of the
@@ -112,17 +134,38 @@ required by its business rules. This keeps the domain independent from the
 in-memory implementation without introducing repository abstractions or mapping
 layers that are unnecessary for the challenge.
 
-## Scope and current status
+## Design decisions and trade-offs
 
 Durability is intentionally not implemented because it is explicitly outside the
 assignment scope. Application state will exist only during the process lifetime
-and will be cleared through `POST /reset` once the account operations are added.
+and can be cleared through `POST /reset`.
 
 Account IDs are strings, matching the API contract. Balances are represented by
 `int64`, which avoids floating-point rounding and is sufficient for the integer
 amounts defined by the assignment.
 
-Phase 8 adds an integration test that reproduces the complete official EBANX API
-workflow against the real HTTP handler, account service and in-memory store. The
-test validates each response in order and confirms that the final failed
-transfer preserves both account balances.
+The service serializes state-changing operations with a mutex. `SaveAll` writes
+both sides of a transfer while holding the store lock, so concurrent requests
+cannot observe or leave a partially applied transfer. Balance queries use read
+locks and never create or update accounts.
+
+The project deliberately avoids a web framework, database, dependency-injection
+container and additional mapping layers. The standard library and one small
+store interface keep the implementation easy to read, test and modify for the
+scope of the exercise.
+
+For a production system, the in-memory store would be replaced by transactional
+durable storage. Multiple application instances would require database-level
+concurrency control or another distributed coordination strategy. Production
+hardening would also include authentication, rate limiting, request and server
+timeouts, graceful shutdown, structured observability and explicit monetary
+limits. These concerns are documented but intentionally not implemented because
+they are outside the assignment requirements.
+
+## Test strategy
+
+Unit tests exercise deposits, withdrawals, transfers, resets, error paths and
+concurrent state changes against the real in-memory store. HTTP tests validate
+transport mapping and exact response bodies. The full workflow test runs the
+official EBANX sequence through the real HTTP handler, service and store, then
+confirms that a failed transfer leaves both account balances unchanged.
