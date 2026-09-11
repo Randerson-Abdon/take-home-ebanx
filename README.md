@@ -12,13 +12,13 @@ testable state of the project.
 ## Run locally
 
 ```sh
-go run .
+go run ./cmd/api
 ```
 
 The server listens on port `8085` by default. Use `PORT` to select another port:
 
 ```sh
-PORT=8080 go run .
+PORT=8080 go run ./cmd/api
 ```
 
 Verify that the server is running:
@@ -33,7 +33,7 @@ The application uses the ngrok Go SDK already included in the project. Set the
 auth token and start the application:
 
 ```sh
-NGROK_AUTHTOKEN=<token> go run .
+NGROK_AUTHTOKEN=<token> go run ./cmd/api
 ```
 
 The public URL is printed in the application logs. The token must be supplied
@@ -63,9 +63,10 @@ the rules to HTTP. A full Clean or Hexagonal Architecture was also rejected
 because its additional ports, adapters and mappings would not provide
 proportional value here.
 
-Interfaces will not be introduced until there is more than one implementation or
-a concrete testability need. This keeps the code malleable without anticipating
-requirements that are outside the specification.
+The account service owns a small `Store` interface containing only the operations
+required by its business rules. This keeps the domain independent from the
+in-memory implementation without introducing repository abstractions or mapping
+layers that are unnecessary for the challenge.
 
 ## Scope and current status
 
@@ -73,6 +74,13 @@ Durability is intentionally not implemented because it is explicitly outside the
 assignment scope. Application state will exist only during the process lifetime
 and will be cleared through `POST /reset` once the account operations are added.
 
-Phase 0 provides the executable HTTP bootstrap, configurable port, optional
-ngrok forwarding and a health check. Account operations are intentionally left
-for the following implementation phases.
+Account IDs are strings, matching the API contract. Balances are represented by
+`int64`, which avoids floating-point rounding and is sufficient for the integer
+amounts defined by the assignment.
+
+Phase 7 exposes the account service through the required `POST /reset`,
+`GET /balance` and `POST /event` routes. HTTP handlers translate requests and
+domain errors without containing balance rules. The bootstrap creates one store
+and one service instance so all requests share the same in-memory state. A small
+CORS middleware allows the EBANX browser-based test suite to call the public
+ngrok URL.
