@@ -73,6 +73,11 @@ Durability is intentionally not implemented because it is explicitly outside the
 assignment scope. Application state will exist only during the process lifetime
 and will be cleared through `POST /reset` once the account operations are added.
 
-Phase 1 separates the executable bootstrap, HTTP transport and ngrok
-infrastructure. The health check remains the only HTTP operation. Account
-operations are intentionally left for the following implementation phases.
+Account IDs are strings, matching the API contract. Balances are represented by
+`int64`, which avoids floating-point rounding and is sufficient for the integer
+amounts defined by the assignment.
+
+Phase 2 introduces the account model and a concurrency-safe in-memory store. The
+store supports lookup, creation, replacement and reset without containing HTTP
+or business-rule concerns. Account operations are intentionally left for the
+following implementation phases.
