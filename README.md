@@ -78,7 +78,7 @@ Account IDs are strings, matching the API contract. Balances are represented by
 `int64`, which avoids floating-point rounding and is sufficient for the integer
 amounts defined by the assignment.
 
-Phase 4 adds balance lookup and state reset to the account service. Balance
-queries return an explicit not-found domain error and never create or update an
-account. Reset is serialized with other business mutations and removes every
-stored account before new operations are accepted.
+Phase 5 adds withdrawals to the account service. A withdrawal requires an
+existing account, a positive amount and sufficient funds. Every validation is
+completed before the account is saved, so rejected withdrawals leave state
+unchanged. Concurrent withdrawals are serialized to prevent overdrafts.

@@ -8,4 +8,7 @@ var (
 
 	// ErrInvalidAmount indicates that an operation received a non-positive amount.
 	ErrInvalidAmount = errors.New("amount must be greater than zero")
+
+	// ErrInsufficientFunds indicates that an account cannot cover a debit.
+	ErrInsufficientFunds = errors.New("insufficient funds")
 )

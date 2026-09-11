@@ -53,6 +53,29 @@ func (s *Service) Deposit(destination string, amount int64) (Account, error) {
 	return destinationAccount, nil
 }
 
+// Withdraw debits an existing account when it has sufficient funds.
+func (s *Service) Withdraw(origin string, amount int64) (Account, error) {
+	if amount <= 0 {
+		return Account{}, ErrInvalidAmount
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	originAccount, found := s.store.Find(origin)
+	if !found {
+		return Account{}, ErrAccountNotFound
+	}
+	if originAccount.Balance < amount {
+		return Account{}, ErrInsufficientFunds
+	}
+
+	originAccount.Balance -= amount
+	s.store.Save(originAccount)
+
+	return originAccount, nil
+}
+
 // Reset removes all account state.
 func (s *Service) Reset() {
 	s.mu.Lock()
