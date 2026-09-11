@@ -27,6 +27,9 @@ Verify that the server is running:
 curl -i http://localhost:8085/health
 ```
 
+The root path (`/`) is not part of the assignment API and intentionally returns
+`404 Not Found`. Use `/health` for the local availability check.
+
 ## Run with ngrok
 
 The application uses the ngrok Go SDK already included in the project. Create
@@ -48,9 +51,10 @@ Then start the application:
 go run ./cmd/api
 ```
 
-The public URL is printed in the application logs. The `.env` file is ignored by
-Git and must not be committed. Variables already exported by the operating
-system take precedence over values from the file.
+The local HTTP server starts before the ngrok connection is established, and the
+public URL is printed in the application logs as soon as the tunnel is ready.
+The `.env` file is ignored by Git and must not be committed. Variables already
+exported by the operating system take precedence over values from the file.
 
 ## Verification
 

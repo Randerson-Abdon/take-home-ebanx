@@ -30,9 +30,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("server listening on http://localhost:%s", port)
+
+	memoryStore := store.NewMemoryStore()
+	accountService := account.NewService(memoryStore)
+	handler := httpapi.NewHandler(accountService)
 
 	if os.Getenv("NGROK_AUTHTOKEN") != "" {
+		serveErrors := make(chan error, 1)
+		go func() {
+			serveErrors <- http.Serve(listener, handler)
+		}()
+		log.Printf("server listening on http://localhost:%s", port)
+
 		forwarder, err := tunnel.Start(context.Background(), port)
 		if err != nil {
 			log.Fatal(err)
@@ -43,12 +52,15 @@ func main() {
 			}
 		}()
 		log.Printf("public URL: %s", forwarder.URL())
+
+		if err := <-serveErrors; err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
 
-	memoryStore := store.NewMemoryStore()
-	accountService := account.NewService(memoryStore)
-
-	if err := http.Serve(listener, httpapi.NewHandler(accountService)); err != nil {
+	log.Printf("server listening on http://localhost:%s", port)
+	if err := http.Serve(listener, handler); err != nil {
 		log.Fatal(err)
 	}
 }
