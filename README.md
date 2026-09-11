@@ -66,6 +66,25 @@ go test ./...
 go vet ./...
 ```
 
+## Postman
+
+Import these files into Postman:
+
+- `postman/EBANX Account API.postman_collection.json`
+- `postman/Local.postman_environment.json`
+- `postman/Ngrok.postman_environment.json`
+
+Select **EBANX Account API - Local** to call the application at
+`http://localhost:8085`. To test the public tunnel, edit `base_url` in the
+**EBANX Account API - Ngrok** environment using the URL printed during startup,
+without a trailing slash.
+
+The collection contains a health check, the complete official EBANX workflow
+and additional validation errors. Run the **Official workflow** folder in its
+defined order because each request verifies the state produced by the previous
+one, beginning with `POST /reset`. Every request includes Postman assertions for
+its expected status and response body.
+
 Run the official API workflow test independently with:
 
 ```sh
