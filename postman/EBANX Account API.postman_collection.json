@@ -1,0 +1,179 @@
+{
+  "info": {
+    "_postman_id": "bc918bbf-8463-4fac-b89f-b574b53cce54",
+    "name": "EBANX Account API",
+    "description": "Requests and assertions for the official EBANX account API workflow. Run the Official workflow folder in order because the in-memory state is shared between requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Availability",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/health",
+            "description": "Application-only health endpoint; it is not part of the EBANX contract."
+          },
+          "event": [{
+            "listen": "test",
+            "script": {"exec": [
+              "pm.test('returns 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('returns ok', () => pm.expect(pm.response.text()).to.eql('ok'));"
+            ], "type": "text/javascript"}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Official workflow",
+      "description": "Run this folder sequentially from Reset state through Transfer from non-existing account.",
+      "item": [
+        {
+          "name": "01 - Reset state",
+          "request": {"method": "POST", "header": [], "url": "{{base_url}}/reset"},
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 200 OK', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript"}}]
+        },
+        {
+          "name": "02 - Get balance for non-existing account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{base_url}}/balance?account_id=1234", "host": ["{{base_url}}"], "path": ["balance"], "query": [{"key": "account_id", "value": "1234"}]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 404 Not Found', () => pm.response.to.have.status(404));",
+            "pm.test('returns zero', () => pm.expect(pm.response.text()).to.eql('0'));"
+          ], "type": "text/javascript"}}]
+        },
+        {
+          "name": "03 - Create account with initial balance",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"type\": \"deposit\",\n  \"destination\": \"100\",\n  \"amount\": 10\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{base_url}}/event"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('creates account 100 with balance 10', () => pm.expect(pm.response.json()).to.eql({ destination: { id: '100', balance: 10 } }));"
+          ], "type": "text/javascript"}}]
+        },
+        {
+          "name": "04 - Deposit into existing account",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"type\": \"deposit\",\n  \"destination\": \"100\",\n  \"amount\": 10\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{base_url}}/event"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('updates balance to 20', () => pm.expect(pm.response.json()).to.eql({ destination: { id: '100', balance: 20 } }));"
+          ], "type": "text/javascript"}}]
+        },
+        {
+          "name": "05 - Get balance for existing account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{base_url}}/balance?account_id=100", "host": ["{{base_url}}"], "path": ["balance"], "query": [{"key": "account_id", "value": "100"}]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('returns balance 20', () => pm.expect(pm.response.text()).to.eql('20'));"
+          ], "type": "text/javascript"}}]
+        },
+        {
+          "name": "06 - Withdraw from non-existing account",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"type\": \"withdraw\",\n  \"origin\": \"200\",\n  \"amount\": 10\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{base_url}}/event"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 404 Not Found', () => pm.response.to.have.status(404));",
+            "pm.test('returns zero', () => pm.expect(pm.response.text()).to.eql('0'));"
+          ], "type": "text/javascript"}}]
+        },
+        {
+          "name": "07 - Withdraw from existing account",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"type\": \"withdraw\",\n  \"origin\": \"100\",\n  \"amount\": 5\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{base_url}}/event"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('updates balance to 15', () => pm.expect(pm.response.json()).to.eql({ origin: { id: '100', balance: 15 } }));"
+          ], "type": "text/javascript"}}]
+        },
+        {
+          "name": "08 - Transfer from existing account",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"type\": \"transfer\",\n  \"origin\": \"100\",\n  \"amount\": 15,\n  \"destination\": \"300\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{base_url}}/event"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('updates both accounts', () => pm.expect(pm.response.json()).to.eql({ origin: { id: '100', balance: 0 }, destination: { id: '300', balance: 15 } }));"
+          ], "type": "text/javascript"}}]
+        },
+        {
+          "name": "09 - Transfer from non-existing account",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"type\": \"transfer\",\n  \"origin\": \"200\",\n  \"amount\": 15,\n  \"destination\": \"300\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{base_url}}/event"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 404 Not Found', () => pm.response.to.have.status(404));",
+            "pm.test('returns zero', () => pm.expect(pm.response.text()).to.eql('0'));"
+          ], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "Additional error cases",
+      "description": "Independent error examples. Reset or prepare the required state before running individual requests.",
+      "item": [
+        {
+          "name": "Reject zero deposit",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"type\": \"deposit\",\n  \"destination\": \"100\",\n  \"amount\": 0\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{base_url}}/event"
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('returns zero', () => pm.expect(pm.response.text()).to.eql('0'));"
+          ], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Reject insufficient funds",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"type\": \"withdraw\",\n  \"origin\": \"300\",\n  \"amount\": 20\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{base_url}}/event",
+            "description": "Run the Official workflow first so account 300 has balance 15."
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('returns 422 Unprocessable Entity', () => pm.response.to.have.status(422));",
+            "pm.test('returns zero', () => pm.expect(pm.response.text()).to.eql('0'));"
+          ], "type": "text/javascript"}}]
+        }
+      ]
+    }
+  ]
+}
